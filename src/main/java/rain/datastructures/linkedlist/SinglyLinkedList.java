@@ -47,7 +47,7 @@ public class SinglyLinkedList implements Iterable<Integer> {
     }
 
     /**
-     * 向链表头部添加
+     * 头插法，向链表头部添加，之前的链表头部向后移动
      *
      * @param value 待添加值
      */
@@ -96,7 +96,7 @@ public class SinglyLinkedList implements Iterable<Integer> {
     }
 
     /**
-     * 向链表尾部添加
+     * 尾插法，向链表尾部添加，之前的链表尾部向前移动
      *
      * @param value 待添加值
      */
@@ -135,11 +135,10 @@ public class SinglyLinkedList implements Iterable<Integer> {
     public int get(int index) {
         Node node = findNode(index);
         if (node == null) {
-            throw new IllegalArgumentException(String.format("索引 [%d] 不合法", index));
+            throw new IllegalArgumentException(String.format("索引 [%d] 不合法，可能超出索引范围", index));
         }
         return node.value;
     }
-
     /**
      * 节点类
      */

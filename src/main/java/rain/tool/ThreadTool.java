@@ -1,4 +1,4 @@
-package rain.thread;
+package rain.tool;
 
 import javax.swing.*;
 import java.awt.*;
@@ -7,7 +7,78 @@ import java.util.Random;
 /**
  * 记录一些线程有关的方法
  */
-public class ThreadTool {
+public final class ThreadTool {
+    /**
+     * 卖票
+     */
+    public void MP() {
+        SellMovieTickets m = new SellMovieTickets();
+        m.setName("窗口1");
+        SellMovieTickets m1 = new SellMovieTickets();
+        m1.setName("窗口2");
+        m.start();
+        m1.start();
+    }
+
+    /**
+     * 线程状态
+     */
+    public void ZT() {
+        // 创建并设置JFrame
+        JFrame frame = new JFrame("线程状态");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 300);
+
+
+        JLabel label = new JLabel("1");
+        label.setHorizontalAlignment(JLabel.CENTER); // 设置标签文本居中
+
+        // 创建按钮
+        JButton button1 = new JButton("开始");
+        JButton button2 = new JButton("挂起");
+        JButton button3 = new JButton("恢复");
+        JButton button4 = new JButton("停止");
+        JButton button5 = new JButton("状态查询");
+
+        JPanel panel1 = new JPanel();
+
+        panel1.add(label);
+        panel1.add(button1);
+        panel1.add(button2);
+        panel1.add(button3);
+        panel1.add(button4);
+        panel1.add(button5);
+
+        frame.add(panel1);
+        // 设置窗口可见
+        frame.setVisible(true);
+
+
+        Thread thread = new Thread(new TS(label));
+        System.out.println("线程创建后，启动前：" + thread.getState());
+        button1.addActionListener(e -> {
+            thread.start();
+            System.out.println("线程刚启动：" + thread.getState());
+        });
+        button2.addActionListener(e -> {
+            TS.setFlag(false);
+            System.out.println("线程挂起：" + thread.getState());
+        });
+        button3.addActionListener(e -> {
+            synchronized (TS.obj) {
+                TS.setFlag(true);
+                TS.obj.notify();
+            }
+            System.out.println("线程恢复：" + thread.getState());
+        });
+        button4.addActionListener(e -> {
+            TS.setIsStop(true);
+        });
+        button5.addActionListener(e -> {
+            System.out.println("线程当前状态：" + thread.getState());
+        });
+    }
+
     /**
      * 龟兔赛跑
      */
@@ -242,5 +313,132 @@ public class ThreadTool {
         });
         thread.start();
         jf.setVisible(true);
+    }
+
+    /**
+     * 随机数组
+     */
+    public void SJ() {
+        JFrame jf = new JFrame();
+        jf.setSize(400, 200);
+        jf.setLocationRelativeTo(null);
+        jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        jf.setLayout(null);
+        String[] strings1 = {"张三", "李四", "王五"};
+        String[] strings2 = {"在美国", "在教室", "在中国"};
+        String[] strings3 = {"修炼", "睡觉", "玩游戏"};
+        JLabel jl = new JLabel(strings1[0] + strings2[0] + strings3[0]);
+        jl.setBounds(100, 45, 200, 20);
+        jl.setOpaque(true);
+        Random r = new Random();
+        jf.add(jl);
+        Thread thread = new Thread(() -> {
+            while (true) {
+                jl.setText(strings1[r.nextInt(strings1.length)] + strings2[r.nextInt(strings2.length)] + strings3[r.nextInt(strings3.length)]);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        });
+        thread.start();
+        jf.setVisible(true);
+    }
+
+    /**
+     * 介绍
+     */
+    public void JS() {
+        JFrame jf = new JFrame();
+        jf.setSize(400, 200);
+        jf.setLocationRelativeTo(null);
+        jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        jf.setLayout(null);
+        String[] strings = {"好吃就在九龙街", "好玩就在庐山", "好喝就要百事可乐"};
+        JLabel jl = new JLabel("九江介绍：" + strings[0]);
+        jl.setBounds(100, 45, 200, 20);
+        jl.setOpaque(true);
+        Random r = new Random();
+        jl.setBackground(new Color(r.nextInt(256), r.nextInt(256), r.nextInt(256)));
+        jf.add(jl);
+        Thread thread = new Thread(() -> {
+            while (true) {
+                jl.setText("九江介绍：" + strings[new Random().nextInt(strings.length)]);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        });
+        thread.start();
+        jf.setVisible(true);
+    }
+
+    /**
+     * 卖票
+     */
+    static class SellMovieTickets extends Thread {
+        static int counter = 1000;
+        static Object lock = new Object();
+
+        @Override
+        public void run() {
+            while (counter > 0) {
+                synchronized (lock) {
+                    System.out.println(getName() + "剩余 " + counter--);
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
+        }
+    }
+
+    static class TS implements Runnable {
+        static final Object obj = new Object();
+        static boolean flag = true;
+        static boolean isStop = false;
+        JLabel label;
+
+        public TS(JLabel label) {
+            this.label = label;
+        }
+
+
+        public static void setIsStop(boolean isStop) {
+            TS.isStop = isStop;
+        }
+
+        public static void setFlag(boolean flag) {
+            TS.flag = flag;
+        }
+
+        @Override
+        public void run() {
+            synchronized (obj) {
+                while (!isStop) {
+                    if (!flag) {
+                        try {
+                            obj.wait();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    label.setText(new Random().nextInt(3) + 1 + "");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
     }
 }

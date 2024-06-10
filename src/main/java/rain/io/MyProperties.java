@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 public class MyProperties extends Properties {
+
     /**
      * 从项目的资源目录加载一个.properties属性文件，并将其内容加载到一个 Properties 对象中
      *
