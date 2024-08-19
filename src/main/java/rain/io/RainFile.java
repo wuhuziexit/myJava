@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
-public class RainFile extends File {
+public final class RainFile extends File {
     public RainFile(String pathname) {
         super(pathname);
     }
@@ -56,6 +56,8 @@ public class RainFile extends File {
             throw new RuntimeException(e);
         }
     }
+
+    private ArrayList<RainFile> findSearchResultList = new ArrayList<>();
 
     /**
      * 把字符串以charsetName的编码格式写入文件
@@ -217,6 +219,25 @@ public class RainFile extends File {
     }
 
     /**
+     * @param charsetName 编码
+     * @return 文件的全部内容
+     */
+    public String readAllText(String charsetName) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            BufferedReader bfr = new BufferedReader(new InputStreamReader(new FileInputStream(this), charsetName));
+            String st;
+            while ((st = bfr.readLine()) != null) {
+                sb.append(st).append(System.lineSeparator());
+            }
+            bfr.close();
+            return sb.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * 搜索目录文件夹下的文本文件，如果文件内容出现字符串st则添加入集合中
      *
      * @param st 要搜索的字符串
@@ -224,21 +245,58 @@ public class RainFile extends File {
      * @throws RuntimeException 如果该文件非目录则抛出异常
      */
     public ArrayList<RainFile> findFilesWithStringInDirectory(String st) {
-        ArrayList<RainFile> list = new ArrayList<>();
-        String[] stArr = list();
+        return findFilesWithStringInDirectory(this, st);
+    }
+
+    /**
+     * 利用递归手段搜索目录文件夹下的文本文件，如果文件内容出现字符串st则添加入集合中
+     *
+     * @param rf 要查找的文件目录
+     * @param st 要搜索的字符串
+     * @return 匹配文件的文件集合
+     * @throws RuntimeException 如果该文件非目录则抛出异常
+     */
+    private ArrayList<RainFile> findFilesWithStringInDirectory(RainFile rf, String st) {
+        String[] stArr = rf.list();
         if (stArr != null) {
             for (String s : stArr) {
-                RainFile file = new RainFile(this, s);
+                RainFile file = new RainFile(rf, s);
                 if (file.isFile()) {
                     if (file.readAllText().contains(st)) {
-                        list.add(file);
+                        findSearchResultList.add(file);
                     }
                 } else {
-                    findFilesWithStringInDirectory(st);
+                    findFilesWithStringInDirectory(file, st);
                 }
             }
         }
-        return list;
+        return findSearchResultList;
+    }
+
+    /**
+     * 利用递归手段搜索目录文件夹下的文本文件，如果文件内容出现字符串st则添加入集合中
+     *
+     * @param rf          要查找的文件目录
+     * @param st          要搜索的字符串
+     * @param charsetName 文件编码
+     * @return 匹配文件的文件集合
+     * @throws RuntimeException 如果该文件非目录则抛出异常
+     */
+    public ArrayList<RainFile> findFilesWithStringInDirectory(RainFile rf, String st, String charsetName) {
+        String[] stArr = rf.list();
+        if (stArr != null) {
+            for (String s : stArr) {
+                RainFile file = new RainFile(rf, s);
+                if (file.isFile()) {
+                    if (file.readAllText(charsetName).contains(st)) {
+                        findSearchResultList.add(file);
+                    }
+                } else {
+                    findFilesWithStringInDirectory(file, st, charsetName);
+                }
+            }
+        }
+        return findSearchResultList;
     }
 
     /**

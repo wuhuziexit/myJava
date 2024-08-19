@@ -3,6 +3,7 @@ package rain.tool;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Random;
+import java.util.Scanner;
 
 /**
  * 记录一些线程有关的方法
@@ -13,11 +14,11 @@ public final class ThreadTool {
      */
     public void MP() {
         SellMovieTickets m = new SellMovieTickets();
-        m.setName("窗口1");
         SellMovieTickets m1 = new SellMovieTickets();
-        m1.setName("窗口2");
+        SellMovieTickets m2 = new SellMovieTickets();
         m.start();
         m1.start();
+        m2.start();
     }
 
     /**
@@ -379,25 +380,18 @@ public final class ThreadTool {
     }
 
     /**
-     * 卖票
+     * 抢红包
      */
-    static class SellMovieTickets extends Thread {
-        static int counter = 1000;
-        static Object lock = new Object();
-
-        @Override
-        public void run() {
-            while (counter > 0) {
-                synchronized (lock) {
-                    System.out.println(getName() + "剩余 " + counter--);
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-
+    public void HB() {
+        Scanner sc = new Scanner(System.in);
+        HongBao hongBao = new HongBao();
+        System.out.print("输入总钱数:");
+        hongBao.total_money = sc.nextDouble();
+        System.out.print("输入红包总数:");
+        hongBao.total_count = sc.nextInt();
+        UserThread user = new UserThread(hongBao);
+        for (int i = 1; i < 9; i++) {
+            new Thread(user).start();
         }
     }
 
@@ -439,6 +433,97 @@ public final class ThreadTool {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * 卖票
+     */
+    static class SellMovieTickets extends Thread {
+        static int counter = 1000;
+        static Object lock = new Object();
+
+        @Override
+        public void run() {
+            while (true) {
+                synchronized (lock) {
+                    if (counter > 0) {
+                        counter--;
+                        System.out.println(getName() + "剩余 " + counter);
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+        }
+    }
+
+    class HongBao {
+        double total_money;//总钱数
+        int total_count; //红包总数
+
+        public HongBao() {
+        }
+
+        public synchronized double getRandomMoney() {
+            Random c = new Random();
+            double val = 0;//用于记录每个人分配到的红包金额，初始化为0
+            if (total_money != 0 && total_count >= 1) {
+                if (total_count / total_money == 0.01) {
+                    //剩下的每个人只能分到0.01的时候
+                    val = 0.01;
+                    //红包总钱数减去被领走的钱
+                    total_money = total_money - val;
+                    //红包总个数减1
+                    total_count -= 1;
+                    //返回每个人领到的钱数
+                    return val;
+                }
+                if (total_count == 1) {
+                    //只有一个红包了
+                    val = total_money;  //领到的钱数就是当前的总钱数
+                } else {
+                    double temp;  //临时变量用于记录红包剩下的金额
+                    while (true) {
+                        //随机生成领到的钱
+                        double max = total_money - (total_count - 1) * 0.01;
+                        double bound = max - 0.01;
+                        //使每个人分到的钱尽可能的平均
+                        val = (double) c.nextInt((int) (bound * 100)) / 100 + 0.01;
+                        //红包剩下的金额相应改变
+                        temp = total_money - val;
+                        if (temp / (total_count - 1) >= 0.01 && val > 0) {
+                            break;
+                        }
+                    }
+                    total_money = total_money - val;
+                }
+                total_count -= 1;
+            }
+            return val;
+        }
+    }
+
+    class UserThread implements Runnable {
+        HongBao hongBao;
+
+        public UserThread(HongBao hongBao) {
+            this.hongBao = hongBao;
+        }
+
+        @Override
+        public void run() {
+            double money = hongBao.getRandomMoney();
+            if (money == 0)
+                System.out.println(Thread.currentThread().getName() + "不好意思，没有抢到！");
+            else
+                System.out.println("恭喜哦！" + Thread.currentThread().getName() + "抢到 " + String.format("%.2f", money) + "元");
         }
     }
 }

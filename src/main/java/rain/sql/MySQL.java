@@ -54,7 +54,7 @@ public class MySQL {
     public Connection getConnection() {
         Connection conn;
         try {
-            conn = DriverManager.getConnection(url, username, password);
+            conn = DriverManager.getConnection(url + database, username, password);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
